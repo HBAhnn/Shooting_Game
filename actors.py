@@ -102,4 +102,7 @@ class Enemy(Actor):
         self._cshape = cm.AARectShape(self.position,
                                       self.width * 0.025,
                                       self.height * 0.025)
-        self.do(ac.Delay(3) + ac.MoveTo((600,400),4) + ac.MoveTo((300,0),4))
+        self.do(ac.Delay(3) + ac.MoveTo((600,350),4) + ac.MoveTo((300,-50),4))
+
+    def update(self, dt):
+        print(1)

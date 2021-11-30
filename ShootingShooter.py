@@ -11,5 +11,5 @@ if __name__ == '__main__':
     pyglet.resource.reindex()
     pyglet.font.add_file('assets/Oswald-Regular.ttf')
     abc = 0
-    director.init(width = 600, height = 800, caption='Shooting Shooter')
+    director.init(width = 600, height = 700, caption='Shooting Shooter')
     director.run(new_menu())

@@ -35,6 +35,8 @@ class GameLayer(cocos.layer.Layer):
         self.update_life()
         self.create_player()
 
+        self.scrollY = 200
+
         #test
         self.create_Enemy()
         
@@ -52,14 +54,20 @@ class GameLayer(cocos.layer.Layer):
                 self.remove(node)
         for _, node in self.children:
             node.update(dt)
+        self.scrollY += 1
 
+        
+        #Background move
+        scroller.set_focus(300, self.scrollY)
+        if self.scrollY == 1150:
+            self.scrollY = 400
         
     def create_player(self):
         self.player = PlayerPlane(self.width * 0.5, 30)
         self.add(self.player)
         
     def create_Enemy(self):
-        self.add(Enemy(300,800))
+        self.add(Enemy(300,700))
 
     def update_life(self):
         self.hud.update_life(self.life)
@@ -89,30 +97,21 @@ class HUD(cocos.layer.Layer):
 class BackgroundLayer(cocos.layer.ScrollableLayer):
     def __init__(self):
         super().__init__()
-        bg = cocos.sprite.Sprite("assets/rivers.png")
-        bg.scale = 2
+        self.bg = cocos.sprite.Sprite("assets/rivers2.png")
+        self.bg.scale = 1
         w, h = cocos.director.director.get_window_size()
-        self.width = w
-        self.height = h * 2
-        bg.x = 200
-        bg.y = 400
-        self.px_width = 400
-        self.px_height = 1000
-        self.add(bg)
+        self.bg.x = 300
+        self.bg.y = 750
+        self.px_width = 600
+        self.px_height = 1600
+        self.add(self.bg)
 
         self.time = 0
         self.testt = 0
-        self.schedule(self.update)
-
-    def update(self, dt):
-        self.testt += dt
-        scroller.set_focus(200, self.testt)
-
 
 def new_game():
     global scroller
     hud = HUD()
-    #scroller
     bg = BackgroundLayer()
     scroller = cocos.layer.ScrollingManager()
     scroller.add(bg, 0, 'scroll')
