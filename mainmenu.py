@@ -29,7 +29,7 @@ class MainMenu(cocos.menu.Menu):
         self.create_menu(items, ac.ScaleTo(1.25, duration=0.25), ac.ScaleTo(1.0, duration=0.25))
 
     def on_new_game(self):
-        director.push(FadeTRTransition(new_game(), duration=2))
+        director.push(FadeTRTransition(new_game(), duration=0.5))
 
     def show_fps(self, val):
         director.show_FPS = val

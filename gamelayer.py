@@ -10,6 +10,9 @@ import cocos.actions as ac
 import cocos.collision_model as cm
 import cocos.euclid as eu
 
+import pyglet.image
+from pyglet.image import Animation
+
 from actors import *
 import mainmenu
 
@@ -29,7 +32,7 @@ class GameLayer(cocos.layer.Layer):
         w, h = cocos.director.director.get_window_size()
         self.hud = hud
         self.width = w
-        self.height = h        
+        self.height = h
         self.score = self._score = 0
         self.life = 3
         self.update_life()
@@ -49,28 +52,59 @@ class GameLayer(cocos.layer.Layer):
     def update(self, dt):
         self.collman.clear()
         for _, node in self.children:
-            self.collman.add(node)
-            if not self.collman.knows(node):
-                self.remove(node)
-        for _, node in self.children:
-            node.update(dt)
-        self.scrollY += 1
+            if not isinstance(node, Explosion):
+                self.collman.add(node)
 
-        
+        for i in range(30):
+            if PlayerShoot.shoot_check[i] != 0:
+                self.collide(PlayerShoot.shoot_check[i])
+
+        PlayerPlane.Guardtime -= dt
+        for other in self.collman.iter_colliding(self.player):
+            if not isinstance(other, PlayerShoot):
+                self.collide(self.player)
+                if PlayerPlane.Guardtime < 0:
+                    self.respawn_player()
+
         #Background move
+        self.scrollY += 1
         scroller.set_focus(300, self.scrollY)
         if self.scrollY == 1150:
+            self.create_Enemy()
             self.scrollY = 400
+
+        for _, node in self.children:
+            node.update(dt)
+
+    def collide(self, node):
+        if node is not None:
+            for other in self.collman.iter_colliding(node):
+                node.collide(other)
+                return True
+        return False
         
     def create_player(self):
         self.player = PlayerPlane(self.width * 0.5, 30)
         self.add(self.player)
+
+    def respawn_player(self):
+        PlayerPlane.Guardtime = 3
+        self.life -= 1
+        self.update_life()
+        if self.life < 0:
+            self.unschedule(self.update)
+        else:
+            self.create_player()
+
         
     def create_Enemy(self):
         self.add(Enemy(300,700))
 
     def update_life(self):
         self.hud.update_life(self.life)
+
+    def Explose(self, position):
+        self.add(Explosion(position[0],position[1]))
 
 
 class HUD(cocos.layer.Layer):
