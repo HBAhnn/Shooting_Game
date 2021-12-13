@@ -38,11 +38,11 @@ class GameLayer(cocos.layer.Layer):
         self.height = h
         self.score = self._score = 0
         self.life = 3
+        self.stage_level = 1
         self.update_life()
         self.create_player()
 
         self.scrollY = 200
-        self.stage_level = 1
 
         self.add(Boss(300, 800))
 
@@ -100,6 +100,8 @@ class GameLayer(cocos.layer.Layer):
     def create_player(self):
         self.player = PlayerPlane(self.width * 0.5, 30)
         self.add(self.player)
+        if self.stage_level == 2:
+            self.player.plane_level = 2
 
     def respawn_player(self):
         PlayerPlane.Guardtime = 3
