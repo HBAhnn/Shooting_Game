@@ -11,6 +11,7 @@ import cocos.collision_model as cm
 import cocos.euclid as eu
 
 import random
+from gamelayer import *
 
 import pyglet.image
 from pyglet.image import Animation
@@ -46,6 +47,7 @@ class Actor(cocos.sprite.Sprite):
 class Explosion(Actor):
     def __init__(self, x, y):
         super(Explosion, self).__init__(explosion_img, x, y)
+        self.scale = 1.5
         self.do(ac.Delay(1) + ac.CallFunc(self.kill))
 
 
@@ -61,6 +63,8 @@ class PlayerPlane(Actor):
         self.elapsed = 0
         self.do(ac.Blink(6,3))
         self.cshape.r *= 0.1
+        self.shootcount = 0
+        self.plane_level = 1
 
         #print('player cannon(size,collsize) : ', self.width, self.cshape.r)
         
@@ -71,14 +75,19 @@ class PlayerPlane(Actor):
         space_pressed = pressed[key.SPACE] == 1
 
         #shoot
+
         self.elapsed -= elapsed
         if self.elapsed < 0.1 and space_pressed:
             self.elapsed = 0.3
-            for i in range(30):
-                if PlayerShoot.shoot_check[i] == 0:
-                    PlayerShoot.shoot_check[i] = PlayerShoot(self.x, self.y + 40, i)
-                    self.parent.add(PlayerShoot.shoot_check[i])
-                    break
+            self.shootcount += 1
+            if(self.shootcount >= 29):
+                self.shootcount = 0
+            if self.plane_level == 1:
+                PlayerShoot.shoot_check[self.shootcount] = PlayerShoot(self.x, self.y + 40, self.shootcount)
+                self.parent.add(PlayerShoot.shoot_check[self.shootcount])
+            else:
+                PlayerShoot2.shoot_check[self.shootcount] = PlayerShoot2(self.x, self.y + 40, self.shootcount)
+                self.parent.add(PlayerShoot2.shoot_check[self.shootcount])
 
         #move
         movable = 1
@@ -100,6 +109,7 @@ class PlayerPlane(Actor):
     def collide(self, other):
         other.hit()
         if PlayerPlane.Guardtime < 0:
+            self.parent.add(Explosion(self.position[0], self.position[1]))
             self.kill()
 
 class Shoot(Actor):
@@ -113,6 +123,7 @@ class Shoot(Actor):
 class EnemyShoot(Shoot):
     def __init__(self, x, y, atk_type = 1):
         super(EnemyShoot, self).__init__(x, y, 'assets/Enemy_shoot_real.png')
+        self.scale = 2.0
         if atk_type == 1:
             self.speed = eu.Vector2(0, -200)
         if atk_type == 2:
@@ -136,20 +147,102 @@ class PlayerShoot(Shoot):
         PlayerShoot.shoot_check[self.num] = 0
 
     def collide(self, other):
-        if isinstance(other, Enemy):
+        if isinstance(other, Enemy) or isinstance(other, Boss):
             other.hit(self.atk)
             self.kill()
+
+class PlayerShoot2(Shoot):
+    shoot_check = [0 for i in range(30)]
+
+    def __init__(self, x, y, num):
+        super(PlayerShoot2, self).__init__(x, y, 'assets/Two_Shot.png')
+        self.speed *= -1
+        self.scale = 0.2
+        self.num = num
+        self.atk = 2
+
+    def on_exit(self):
+        super(PlayerShoot2, self).on_exit()
+        PlayerShoot2.shoot_check[self.num] = 0
+
+    def collide(self, other):
+        if isinstance(other, Enemy) or isinstance(other, Boss):
+            other.hit(self.atk)
+            self.kill()
+
+class Boss(Actor):
+    def __init__(self, x, y):
+        super(Boss, self).__init__('assets/Enemy.png', x, y)
+        self.scale = 0.4
+        self.hp = 5
+        self.delay = 0
+        self.scale_y = 0.4
+        self.death = 0
+        self.explosion_count = 0
+        self._cshape = cm.CircleShape(self.position,
+                                      self.width * 0.25)
+        self.do(ac.MoveTo((300, 680), 5))
+        # print('player enemy(size,collsize) : ', self.width, self.cshape.center, self.cshape.rx, self.cshape.ry)
+
+    def update(self, dt):
+        self.delay += dt
+        if random.random() < 0.003 and self.delay > 2:
+            self.delay = 0
+            self.parent.add(EnemyShoot(self.x + 30, self.y, 1))
+            self.parent.add(EnemyShoot(self.x + 30, self.y, 2))
+            self.parent.add(EnemyShoot(self.x + 30, self.y, 3))
+            self.parent.add(EnemyShoot(self.x - 30, self.y, 1))
+            self.parent.add(EnemyShoot(self.x - 30, self.y, 2))
+            self.parent.add(EnemyShoot(self.x - 30, self.y, 3))
+
+    def hit(self, damage=1):
+        self.hp -= damage
+        self.do(Hit())
+        if self.hp <= 0 and self.is_running:
+            self.explode()
+
+    def explode(self):
+        if(self.death == 0):
+            self.do(ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) + ac.CallFunc(self.kill) +
+                    ac.CallFunc(self.level_up_call))
+            self.death = 1
+
+    def boss_explosion(self):
+        self.explosion_count += 1
+        if(self.explosion_count == 1):
+            self.parent.add(Explosion(self.position[0], self.position[1] - 100))
+            self.parent.add(Explosion(self.position[0] - 20, self.position[1]))
+        if(self.explosion_count == 2):
+            self.parent.add(Explosion(self.position[0] + 30, self.position[1]))
+        if(self.explosion_count == 3):
+            self.parent.add(Explosion(self.position[0] + 50, self.position[1]))
+            self.parent.add(Explosion(self.position[0] - 20, self.position[1]))
+        if(self.explosion_count == 4):
+            self.parent.add(Explosion(self.position[0] + 20, self.position[1] - 30))
+        if(self.explosion_count == 5):
+            self.parent.add(Explosion(self.position[0] - 50, self.position[1]))
+            self.parent.add(Explosion(self.position[0] + 30, self.position[1] + 30))
+        if(self.explosion_count == 6):
+            self.parent.add(Explosion(self.position[0], self.position[1] - 20))
+            self.parent.add(Explosion(self.position[0] + 20, self.position[1]))
+
+    def level_up_call(self):
+        self.parent.level_up()
 
 class Enemy(Actor):
     direction = 0
     def __init__(self, x, y):
-        super(Enemy, self).__init__('assets/Enemy.png', x, y)
-        self.scale = 0.1
+        super(Enemy, self).__init__('assets/Boss_Plane.png', x, y)
         self.hp = 5
         self.delay = 0
         self._cshape = cm.AARectShape(self.position,
-                                      self.width * 0.05,
-                                      self.height * 0.05)
+                                      self.width * 0.4,
+                                      self.height * 0.4)
         #print('player enemy(size,collsize) : ', self.width, self.cshape.center, self.cshape.rx, self.cshape.ry)
         if Enemy.direction == 0:
             Enemy.direction = 1
@@ -174,12 +267,11 @@ class Enemy(Actor):
         
 
     def explode(self):
-        self.parent.Explose(self.position)
+        self.parent.add(Explosion(self.position[0], self.position[1]))
         self.kill()
 
 class Hit(ac.IntervalAction):
     def init(self, duration=0.5):
         self.duration = duration
-
     def update(self, t):
         self.target.color = (255, 255 * t, 255 * t)
