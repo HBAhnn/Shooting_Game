@@ -51,7 +51,7 @@ class Actor(cocos.sprite.Sprite):
 class Explosion(Actor):
     def __init__(self, x, y):
         super(Explosion, self).__init__(explosion_img, x, y)
-        self.scale = 1.5
+        self.scale = 2
         self.do(ac.Delay(1) + ac.CallFunc(self.kill))
 
         exp_sound = pygame.mixer.Sound("C:/Users/ahn87/Desktop/dd/2Grade2/게임 프로그래밍 입문/ShootingShooter_GPI_Project/sound/explosion1.wav")
@@ -72,7 +72,7 @@ class Bomb_Explosion(Actor):
 class Life_image(Actor):
     def __init__(self, x, y):
         super(Life_image, self).__init__('assets/Player_Character.png', x, y)
-        self.scale = 0.08
+        self.scale = 0.3
 
 class Missile_image(Actor):
     def __init__(self, x, y):
@@ -87,12 +87,12 @@ class PlayerPlane(Actor):
 
     def __init__(self, x, y):
         super(PlayerPlane, self).__init__('assets/Player_Character.png', x, y)
-        self.scale = 0.1
+        self.scale = 0.5
         self.Xspeed = eu.Vector2(200, 0)
         self.Yspeed = eu.Vector2(0, 200)
         self.elapsed = 0
         self.do(ac.Blink(6,3))
-        self.cshape.r *= 0.1
+        self.cshape.r *= 0.5
         self.shootcount = 0
         self.plane_level = 1
         self.shoot_sound = pygame.mixer.Sound(
@@ -222,7 +222,7 @@ class Boss(Actor):
     def __init__(self, x, y):
         super(Boss, self).__init__('assets/Enemy.png', x, y)
         self.scale = 0.4
-        self.hp = 5
+        self.hp = 30
         self.delay = 0
         self.scale_y = 0.4
         self.death = 0
@@ -286,7 +286,7 @@ class Boss2(Actor):
     def __init__(self, x, y):
         super(Boss2, self).__init__('assets/boss_shadow.png', x, y)
         self.scale = 2.5
-        self.hp = 50
+        self.hp = 80
         self.delay = 0
         self.death = 0
         self.explosion_count = 0
@@ -378,7 +378,7 @@ class Enemy(Actor):
 
     def update(self, dt):
         self.delay += dt
-        if random.random() < 0.003 and self.delay > 2:
+        if random.random() < 0.01 and self.delay > 2:
             self.delay = 0
             self.parent.add(EnemyShoot(self.x, self.y, 1))
             self.parent.add(EnemyShoot(self.x, self.y, 2))

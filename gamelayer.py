@@ -166,7 +166,6 @@ class GameLayer(cocos.layer.Layer):
             self.hud.show_game_over()
             self.gameoverbool = 1
         else:
-            self.update_life()
             self.create_player()
 
         
