@@ -20,6 +20,10 @@ raw = pyglet.image.load('assets/explosion.png')
 seq = pyglet.image.ImageGrid(raw, 1, 8)
 explosion_img = Animation.from_image_sequence(seq, 0.07, False)
 
+raw2 = pyglet.image.load('assets/bomb_exp.png')
+seq2 = pyglet.image.ImageGrid(raw2, 4, 4)
+explosion_img2 = Animation.from_image_sequence(seq2, 0.1, False)
+
 class Actor(cocos.sprite.Sprite):
     def __init__(self, image, x, y):
         super(Actor, self).__init__(image)
@@ -53,6 +57,28 @@ class Explosion(Actor):
         exp_sound = pygame.mixer.Sound("C:/Users/ahn87/Desktop/dd/2Grade2/게임 프로그래밍 입문/ShootingShooter_GPI_Project/sound/explosion1.wav")
         exp_sound.set_volume(0.1)
         exp_sound.play()
+
+class Bomb_Explosion(Actor):
+    def __init__(self, x, y):
+        super(Bomb_Explosion, self).__init__(explosion_img2, x, y)
+        self.scale = 7
+        self.do(ac.Delay(1.8) + ac.CallFunc(self.kill))
+
+        exp_sound = pygame.mixer.Sound("C:/Users/ahn87/Desktop/dd/2Grade2/게임 프로그래밍 입문/ShootingShooter_GPI_Project/sound/bomb_explosion.wav")
+        exp_sound.set_volume(0.1)
+        exp_sound.play()
+
+
+class Life_image(Actor):
+    def __init__(self, x, y):
+        super(Life_image, self).__init__('assets/Player_Character.png', x, y)
+        self.scale = 0.08
+
+class Missile_image(Actor):
+    def __init__(self, x, y):
+        super(Missile_image, self).__init__('assets/missile.png', x, y)
+        self.scale = 0.04
+
 
 
 class PlayerPlane(Actor):
@@ -135,9 +161,23 @@ class EnemyShoot(Shoot):
         if atk_type == 1:
             self.speed = eu.Vector2(0, -200)
         if atk_type == 2:
-            self.speed = eu.Vector2(50, -150)
+            self.speed = eu.Vector2(50, -180)
         if atk_type == 3:
-            self.speed = eu.Vector2(-50, -150)
+            self.speed = eu.Vector2(-50, -180)
+
+
+class Missile(Actor):
+    def __init__(self, x, y):
+        super(Missile, self).__init__('assets/missile.png', x, y)
+        self.scale = 0.05
+        self.scale_y = 0.8
+        self.do(ac.MoveTo((300,400), 4) + ac.CallFunc(self.callpardeal) + ac.CallFunc(self.kill))
+        exp_sound = pygame.mixer.Sound("C:/Users/ahn87/Desktop/dd/2Grade2/게임 프로그래밍 입문/ShootingShooter_GPI_Project/sound/bomb_move.wav")
+        exp_sound.set_volume(0.1)
+        exp_sound.play()
+
+    def callpardeal(self):
+        self.parent.bomb_boom()
 
 class PlayerShoot(Shoot):
     shoot_check = [0 for i in range(15)]
@@ -174,7 +214,7 @@ class PlayerShoot2(Shoot):
         PlayerShoot2.shoot_check[self.num] = 0
 
     def collide(self, other):
-        if isinstance(other, Enemy) or isinstance(other, Boss):
+        if isinstance(other, Enemy) or isinstance(other, Boss2):
             other.hit(self.atk)
             self.kill()
 
@@ -194,7 +234,7 @@ class Boss(Actor):
 
     def update(self, dt):
         self.delay += dt
-        if random.random() < 0.003 and self.delay > 2:
+        if self.delay > 4:
             self.delay = 0
             self.parent.add(EnemyShoot(self.x + 30, self.y, 1))
             self.parent.add(EnemyShoot(self.x + 30, self.y, 2))
@@ -241,6 +281,83 @@ class Boss(Actor):
 
     def level_up_call(self):
         self.parent.level_up()
+
+class Boss2(Actor):
+    def __init__(self, x, y):
+        super(Boss2, self).__init__('assets/boss_shadow.png', x, y)
+        self.scale = 2.5
+        self.hp = 50
+        self.delay = 0
+        self.death = 0
+        self.explosion_count = 0
+        self.speed = eu.Vector2(80,0)
+        self._cshape = cm.AARectShape(self.position,
+                                      self.width * 0.2,
+                                      self.height * 0.3)
+        self.do(ac.MoveTo((300, 730), 3))
+        self.direction = 1
+        # print('player enemy(size,collsize) : ', self.width, self.cshape.center, self.cshape.rx, self.cshape.ry)
+
+    def update(self, dt):
+        self.delay += dt
+        self.move(self.speed * dt * self.direction)
+        if self.x >= 450:
+            self.direction = -1
+        elif self.x <= 150:
+            self.direction = 1
+        if self.delay > 4:
+            self.delay = 0
+            self.parent.add(EnemyShoot(self.x + 50, self.y - 100, 1))
+            self.parent.add(EnemyShoot(self.x + 50, self.y - 100, 2))
+            self.parent.add(EnemyShoot(self.x + 50, self.y - 100, 3))
+            self.parent.add(EnemyShoot(self.x - 50, self.y - 100, 1))
+            self.parent.add(EnemyShoot(self.x - 50, self.y - 100, 2))
+            self.parent.add(EnemyShoot(self.x - 50, self.y - 100, 3))
+            self.parent.add(EnemyShoot(self.x, self.y - 100, 1))
+            self.parent.add(EnemyShoot(self.x, self.y - 100, 2))
+            self.parent.add(EnemyShoot(self.x, self.y - 100, 3))
+
+    def hit(self, damage=1):
+        self.hp -= damage
+        self.do(Hit())
+        if self.hp <= 0 and self.is_running:
+            self.direction = 0
+            self.explode()
+
+    def explode(self):
+        if(self.death == 0):
+            self.do(ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) +
+                    ac.CallFunc(self.boss_explosion) + ac.Delay(0.4) + ac.CallFunc(self.kill) +
+                    ac.CallFunc(self.finish_game))
+            self.death = 1
+
+    def boss_explosion(self):
+        self.explosion_count += 1
+        if(self.explosion_count == 1):
+            self.parent.add(Explosion(self.position[0], self.position[1] - 150))
+            self.parent.add(Explosion(self.position[0] - 20, self.position[1] - 50))
+            self.parent.add(Explosion(self.position[0] + 60, self.position[1] - 50))
+        if(self.explosion_count == 2):
+            self.parent.add(Explosion(self.position[0] + 30, self.position[1] - 50))
+            self.parent.add(Explosion(self.position[0] - 70, self.position[1] - 50))
+        if(self.explosion_count == 3):
+            self.parent.add(Explosion(self.position[0] + 120, self.position[1] - 50))
+            self.parent.add(Explosion(self.position[0] - 20, self.position[1] - 50))
+        if(self.explosion_count == 4):
+            self.parent.add(Explosion(self.position[0] + 20, self.position[1] - 80))
+        if(self.explosion_count == 5):
+            self.parent.add(Explosion(self.position[0] - 120, self.position[1] - 50))
+            self.parent.add(Explosion(self.position[0] + 30, self.position[1] - 80))
+        if(self.explosion_count == 6):
+            self.parent.add(Explosion(self.position[0], self.position[1] - 70))
+            self.parent.add(Explosion(self.position[0] + 20, self.position[1] - 50))
+
+    def finish_game(self):
+        print("end")
 
 class Enemy(Actor):
     direction = 0
