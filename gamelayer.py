@@ -10,6 +10,8 @@ import cocos.actions as ac
 import cocos.collision_model as cm
 import cocos.euclid as eu
 
+import pygame
+#import cocos.audio
 #import cocos.audio.pygame
 #import cocos.audio.pygame.mixer
 
@@ -49,7 +51,7 @@ class GameLayer(cocos.layer.Layer):
         #test
         self.create_Enemy()
         
-        cell = 1.25 * 50
+        cell = 50
         self.collman = cm.CollisionManagerGrid(0, w, 0, h, 
                                                cell, cell)
 
@@ -63,11 +65,11 @@ class GameLayer(cocos.layer.Layer):
 
         #플레이어 총알 콜리전 체크
         if self.stage_level == 1:
-            for i in range(30):
+            for i in range(15):
                 if PlayerShoot.shoot_check[i] != 0:
                     self.collide(PlayerShoot.shoot_check[i])
         else:
-            for i in range(30):
+            for i in range(15):
                 if PlayerShoot2.shoot_check[i] != 0:
                     self.collide(PlayerShoot2.shoot_check[i])
                 
@@ -123,6 +125,8 @@ class GameLayer(cocos.layer.Layer):
         self.stage_level = 2
         self.player.plane_level = 2
         self.player.shootcount = 0
+        for i in range(15):
+            PlayerShoot.shoot_check[i] = 0
 
 
 

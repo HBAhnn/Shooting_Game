@@ -50,6 +50,10 @@ class Explosion(Actor):
         self.scale = 1.5
         self.do(ac.Delay(1) + ac.CallFunc(self.kill))
 
+        exp_sound = pygame.mixer.Sound("C:/Users/ahn87/Desktop/dd/2Grade2/게임 프로그래밍 입문/ShootingShooter_GPI_Project/sound/explosion1.wav")
+        exp_sound.set_volume(0.1)
+        exp_sound.play()
+
 
 class PlayerPlane(Actor):
     KEYS_PRESSED = defaultdict(int)
@@ -65,6 +69,9 @@ class PlayerPlane(Actor):
         self.cshape.r *= 0.1
         self.shootcount = 0
         self.plane_level = 1
+        self.shoot_sound = pygame.mixer.Sound(
+            "C:/Users/ahn87/Desktop/dd/2Grade2/게임 프로그래밍 입문/ShootingShooter_GPI_Project/sound/shoot.mp3")
+        self.shoot_sound.set_volume(0.01)
 
         #print('player cannon(size,collsize) : ', self.width, self.cshape.r)
         
@@ -78,9 +85,10 @@ class PlayerPlane(Actor):
 
         self.elapsed -= elapsed
         if self.elapsed < 0.1 and space_pressed:
-            self.elapsed = 0.3
+            self.elapsed = 0.4
             self.shootcount += 1
-            if(self.shootcount >= 29):
+            self.shoot_sound.play()
+            if(self.shootcount >= 14):
                 self.shootcount = 0
             if self.plane_level == 1:
                 PlayerShoot.shoot_check[self.shootcount] = PlayerShoot(self.x, self.y + 40, self.shootcount)
@@ -132,7 +140,7 @@ class EnemyShoot(Shoot):
             self.speed = eu.Vector2(-50, -150)
 
 class PlayerShoot(Shoot):
-    shoot_check = [0 for i in range(30)]
+    shoot_check = [0 for i in range(15)]
 
     def __init__(self, x, y, num):
         super(PlayerShoot, self).__init__(x, y, 'assets/One_shot.png')
@@ -152,7 +160,7 @@ class PlayerShoot(Shoot):
             self.kill()
 
 class PlayerShoot2(Shoot):
-    shoot_check = [0 for i in range(30)]
+    shoot_check = [0 for i in range(15)]
 
     def __init__(self, x, y, num):
         super(PlayerShoot2, self).__init__(x, y, 'assets/Two_Shot.png')
